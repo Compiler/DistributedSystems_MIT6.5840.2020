@@ -4,6 +4,9 @@ import "fmt"
 import "log"
 import "net/rpc"
 import "hash/fnv"
+import "strconv"
+import "strings"
+import "io/ioutil"
 
 
 //
@@ -32,6 +35,24 @@ func Worker(mapf func(string, string) []KeyValue,
 	reducef func(string, []string) string) {
 
 	// Your worker implementation here.
+	
+	args := TaskArgs{}
+	reply := TaskReply{}
+	call("Master.TaskRequest", &args, &reply)
+
+	if(reply.IsMap) {
+		parsedInput := strings.Replace(reply.InputFile, ".txt", "", 1)
+		output := parsedInput + "-" + strconv.Itoa(reply.InputUID) + ".txt"
+		content, err := ioutil.ReadFile(reply.InputFile)
+		if err != nil {
+			fmt.Printf("Failed to read file: %s\n", err)
+		}
+		result := mapf(reply.InputFile, string(content))
+		fmt.Printf("Ran a mapf on %s, to %s\n", reply.InputFile, output)
+		for _, kv := range result {
+			fmt.Printf("%d -> Key: %s, Value: %s\n", reply.InputUID, kv.Key, kv.Value)
+		}
+	}
 
 	// uncomment to send the Example RPC to the master.
 	// CallExample()

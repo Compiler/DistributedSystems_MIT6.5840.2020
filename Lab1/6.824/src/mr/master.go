@@ -5,14 +5,28 @@ import "net"
 import "os"
 import "net/rpc"
 import "net/http"
+import "fmt"
 
 
 type Master struct {
 	// Your definitions here.
-
+	inputFiles []string
+	interFiles []string
+	outFiles []string
+	nReduce int
+	inputFileIndex int
+	
 }
 
 // Your code here -- RPC handlers for the worker to call.
+
+func (m *Master) TaskRequest(args *TaskArgs, reply *TaskReply) error {
+	reply.IsMap = true
+	reply.InputFile = m.inputFiles[m.inputFileIndex]
+	reply.InputUID = m.inputFileIndex + 1
+	m.inputFileIndex++
+	return nil
+}
 
 //
 // an example RPC handler.
@@ -46,7 +60,7 @@ func (m *Master) server() {
 // if the entire job has finished.
 //
 func (m *Master) Done() bool {
-	ret := false
+	ret := false // Move to false!
 
 	// Your code here.
 
@@ -61,10 +75,10 @@ func (m *Master) Done() bool {
 //
 func MakeMaster(files []string, nReduce int) *Master {
 	m := Master{}
-
-	// Your code here.
-
-
+	m.inputFiles = files
+	m.nReduce = nReduce
+	m.inputFileIndex = 0
+	fmt.Printf("Files: %v, nReduce: %d\n", files, nReduce)
 	m.server()
 	return &m
 }

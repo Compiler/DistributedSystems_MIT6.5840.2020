@@ -7,6 +7,7 @@ import "hash/fnv"
 import "strconv"
 import "strings"
 import "io/ioutil"
+import "os"
 
 
 //
@@ -52,6 +53,29 @@ func Worker(mapf func(string, string) []KeyValue,
 		for _, kv := range result {
 			fmt.Printf("%d -> Key: %s, Value: %s\n", reply.InputUID, kv.Key, kv.Value)
 		}
+
+        file, err := os.Create(output)
+        if err != nil {
+            fmt.Println("Error creating file:", err)
+            return
+        }
+        defer file.Close() // Ensure the file is closed when the program exits
+
+        // Write each KeyValue pair to the file
+        for _, kv := range result {
+            _, err := fmt.Fprintf(file, "%s %s\n", kv.Key, kv.Value)
+            if err != nil {
+                fmt.Println("Error writing to file:", err)
+                return
+            }
+        }
+
+        fmt.Println("Data successfully written to", output)
+
+        args := MapDoneArgs{}
+        args.InterFile = output
+        reply := MapDoneReply{}
+        call("Master.MapTaskDone", &args, &reply)
 	}
 
 	// uncomment to send the Example RPC to the master.

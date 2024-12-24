@@ -15,19 +15,32 @@ type Master struct {
 	outFiles []string
 	nReduce int
 	inputFileIndex int
-	
+    numMapsDone int
 }
 
 // Your code here -- RPC handlers for the worker to call.
 
 func (m *Master) TaskRequest(args *TaskArgs, reply *TaskReply) error {
-	reply.IsMap = true
-	reply.InputFile = m.inputFiles[m.inputFileIndex]
-	reply.InputUID = m.inputFileIndex + 1
-	m.inputFileIndex++
+    if m.numMapsDone < len(m.inputFiles){
+        reply.IsMap = true
+        reply.InputFile = m.inputFiles[m.inputFileIndex]
+        reply.InputUID = m.inputFileIndex + 1
+        m.inputFileIndex++
+    } else {
+        reply.IsMap = false
+        reply.InputFile = m.interFiles[m.inputFileIndex]
+    }
+    if m.inputFileIndex == len(m.interFiles) {
+        m.inputFileIndex = 0
+    }
 	return nil
 }
 
+func (m *Master) MapTaskDone(args *MapDoneArgs, reply *MapDoneReply) error {
+    m.interFiles = append(m.interFiles, args.InterFile)
+    m.numMapsDone = m.numMapsDone + 1
+	return nil
+}
 //
 // an example RPC handler.
 //
@@ -62,6 +75,7 @@ func (m *Master) server() {
 func (m *Master) Done() bool {
 	ret := false // Move to false!
 
+    ret = m.numMapsDone == len(m.inputFiles) && m.inputFileIndex == len(m.interFiles)
 	// Your code here.
 
 

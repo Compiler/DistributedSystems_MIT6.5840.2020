@@ -33,6 +33,14 @@ type TaskReply struct {
 
 type EmptyReq struct {}
 
+type MapDoneArgs struct {
+    InterFile string
+}
+
+type MapDoneReply struct {
+    InterFile string
+}
+
 
 // Add your RPC definitions here.
 

@@ -23,15 +23,17 @@ type Master struct {
 func (m *Master) TaskRequest(args *TaskArgs, reply *TaskReply) error {
     if m.numMapsDone < len(m.inputFiles){
         reply.IsMap = true
+		fmt.Printf("Sending file #%d of %d files.\n", m.inputFileIndex, len(m.inputFiles));
         reply.InputFile = m.inputFiles[m.inputFileIndex]
         reply.InputUID = m.inputFileIndex + 1
-        m.inputFileIndex++
+        m.inputFileIndex = reply.InputUID
+		if m.inputFileIndex >= len(m.inputFiles) {
+			m.inputFileIndex = 0
+		}
+		fmt.Printf("Input File Index: %d\n", m.inputFileIndex);
     } else {
         reply.IsMap = false
         reply.InputFile = m.interFiles[m.inputFileIndex]
-    }
-    if m.inputFileIndex == len(m.interFiles) {
-        m.inputFileIndex = 0
     }
 	return nil
 }
@@ -39,6 +41,7 @@ func (m *Master) TaskRequest(args *TaskArgs, reply *TaskReply) error {
 func (m *Master) MapTaskDone(args *MapDoneArgs, reply *MapDoneReply) error {
     m.interFiles = append(m.interFiles, args.InterFile)
     m.numMapsDone = m.numMapsDone + 1
+	fmt.Printf("Finished map job, interfiles: %v\n Num done %d\n", m.interFiles, m.numMapsDone)
 	return nil
 }
 //

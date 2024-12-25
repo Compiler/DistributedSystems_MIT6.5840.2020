@@ -28,54 +28,64 @@ func ihash(key string) int {
 	return int(h.Sum32() & 0x7fffffff)
 }
 
+func run_map(mapf func(string, string) []KeyValue, reducef func(string, []string) string, args *TaskArgs, reply *TaskReply) bool {
+
+
+	parsedInput := strings.Replace(reply.InputFile, ".txt", "", 1)
+	output := parsedInput + "_out_" + strconv.Itoa(reply.InputUID) + ".txt"
+	content, err := ioutil.ReadFile(reply.InputFile)
+	if err != nil {
+		fmt.Printf("Failed to read file: %s\n", err)
+		return false
+	}
+	result := mapf(reply.InputFile, string(content))
+	fmt.Printf("Ran a mapf on %s, to %s\n", reply.InputFile, output)
+	for _, kv := range result {
+		fmt.Printf("%d -> Key: %s, Value: %s\n", reply.InputUID, kv.Key, kv.Value)
+	}
+
+	file, err := os.Create(output)
+	if err != nil {
+		fmt.Println("Error creating file:", err)
+		return false
+	}
+	defer file.Close() // Ensure the file is closed when the program exits
+
+	// Write each KeyValue pair to the file
+	for _, kv := range result {
+		_, err := fmt.Fprintf(file, "%s %s\n", kv.Key, kv.Value)
+		if err != nil {
+			fmt.Println("Error writing to file:", err)
+			return false
+		}
+	}
+
+	fmt.Println("Data successfully written to", output)
+
+	map_args := MapDoneArgs{}
+	map_args.InterFile = output
+	map_reply := MapDoneReply{}
+	call("Master.MapTaskDone", &map_args, &map_reply)
+
+	return true
+
+}
+
+func execute_task(mapf func(string, string) []KeyValue, reducef func(string, []string) string) {
+
+}
 
 //
 // main/mrworker.go calls this function.
 //
-func Worker(mapf func(string, string) []KeyValue,
-	reducef func(string, []string) string) {
-
-	// Your worker implementation here.
-	
+func Worker(mapf func(string, string) []KeyValue, reducef func(string, []string) string) {
 	args := TaskArgs{}
 	reply := TaskReply{}
 	call("Master.TaskRequest", &args, &reply)
 
+	// Your worker implementation here.
 	if(reply.IsMap) {
-		parsedInput := strings.Replace(reply.InputFile, ".txt", "", 1)
-		output := parsedInput + "-" + strconv.Itoa(reply.InputUID) + ".txt"
-		content, err := ioutil.ReadFile(reply.InputFile)
-		if err != nil {
-			fmt.Printf("Failed to read file: %s\n", err)
-		}
-		result := mapf(reply.InputFile, string(content))
-		fmt.Printf("Ran a mapf on %s, to %s\n", reply.InputFile, output)
-		for _, kv := range result {
-			fmt.Printf("%d -> Key: %s, Value: %s\n", reply.InputUID, kv.Key, kv.Value)
-		}
-
-        file, err := os.Create(output)
-        if err != nil {
-            fmt.Println("Error creating file:", err)
-            return
-        }
-        defer file.Close() // Ensure the file is closed when the program exits
-
-        // Write each KeyValue pair to the file
-        for _, kv := range result {
-            _, err := fmt.Fprintf(file, "%s %s\n", kv.Key, kv.Value)
-            if err != nil {
-                fmt.Println("Error writing to file:", err)
-                return
-            }
-        }
-
-        fmt.Println("Data successfully written to", output)
-
-        args := MapDoneArgs{}
-        args.InterFile = output
-        reply := MapDoneReply{}
-        call("Master.MapTaskDone", &args, &reply)
+		run_map(mapf, reducef, &args, &reply)
 	}
 
 	// uncomment to send the Example RPC to the master.

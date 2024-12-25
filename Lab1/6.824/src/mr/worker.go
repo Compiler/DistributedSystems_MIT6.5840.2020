@@ -33,8 +33,7 @@ func run_map(mapf func(string, string) []KeyValue,  args *TaskArgs, reply *TaskR
 
 	for _, file := range reply.InputFiles {
 		content, err := ioutil.ReadFile(file)
-		parsedInput := strings.Replace(file, ".txt", "", 1)
-		output := parsedInput + "_out_" + strconv.Itoa(reply.InputUID) + ".txt"
+		output :=  "mr__out_inter_" + strconv.Itoa(reply.InputUID) + ".txt"
 		if err != nil {
 			fmt.Printf("Failed to read file: %s\n", err)
 			return false

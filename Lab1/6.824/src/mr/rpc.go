@@ -27,18 +27,22 @@ type TaskArgs struct {
 
 type TaskReply struct {
 	IsMap bool
-	InputFile string
+	InputFiles []string
 	InputUID int
+	IsDone bool
+	NoReq bool
 }
 
 type EmptyReq struct {}
 
-type MapDoneArgs struct {
-    InterFile string
+type TaskDoneArgs struct {
+	IsMap bool
+    OutputFile string
 }
 
-type MapDoneReply struct {
-    InterFile string
+type TaskDoneReply struct {
+	IsMap bool
+    OutputFile string
 }
 
 

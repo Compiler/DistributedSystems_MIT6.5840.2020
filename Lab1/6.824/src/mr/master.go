@@ -15,33 +15,48 @@ type Master struct {
 	outFiles []string
 	nReduce int
 	inputFileIndex int
+	interFileIndex int
     numMapsDone int
+    numReduceDone int
 }
 
 // Your code here -- RPC handlers for the worker to call.
 
 func (m *Master) TaskRequest(args *TaskArgs, reply *TaskReply) error {
-    if m.numMapsDone < len(m.inputFiles){
+	reply.IsDone = false
+	reply.NoReq = false
+	fmt.Printf("TaskRequested: numMapsDone = %d, numInputFiles = %d\n", m.numMapsDone, len(m.inputFiles))
+	if m.Done() {
+		reply.NoReq = true
+	}else if m.numMapsDone < len(m.inputFiles) {
         reply.IsMap = true
 		fmt.Printf("Sending file #%d of %d files.\n", m.inputFileIndex, len(m.inputFiles));
-        reply.InputFile = m.inputFiles[m.inputFileIndex]
+        reply.InputFiles = []string{m.inputFiles[m.inputFileIndex]}
         reply.InputUID = m.inputFileIndex + 1
         m.inputFileIndex = reply.InputUID
-		if m.inputFileIndex >= len(m.inputFiles) {
-			m.inputFileIndex = 0
-		}
 		fmt.Printf("Input File Index: %d\n", m.inputFileIndex);
-    } else {
+    } else if reply.InputUID < len(m.interFiles) && len(m.inputFiles) == len(m.interFiles){
         reply.IsMap = false
-        reply.InputFile = m.interFiles[m.inputFileIndex]
-    }
+        reply.InputFiles = m.interFiles
+        reply.InputUID = m.interFileIndex + 1
+        m.interFileIndex = reply.InputUID
+    } else {
+		reply.NoReq = true
+	}
 	return nil
 }
 
-func (m *Master) MapTaskDone(args *MapDoneArgs, reply *MapDoneReply) error {
-    m.interFiles = append(m.interFiles, args.InterFile)
-    m.numMapsDone = m.numMapsDone + 1
-	fmt.Printf("Finished map job, interfiles: %v\n Num done %d\n", m.interFiles, m.numMapsDone)
+func (m *Master) TaskDone(args *TaskDoneArgs, reply *TaskDoneReply) error {
+	fmt.Printf("TaskDone reported by map ? %b\n", args.IsMap)
+	if(args.IsMap) {
+		m.interFiles = append(m.interFiles, args.OutputFile)
+		m.numMapsDone = m.numMapsDone + 1
+		fmt.Printf("Finished map job, interfiles: %v\n Num done %d\n", m.interFiles, m.numMapsDone)
+	} else {
+		m.outFiles = append(m.outFiles, args.OutputFile)
+		m.numReduceDone = m.numReduceDone + 1
+		fmt.Printf("Finished reduce job, outFiles: %v\n Num done %d\n", m.outFiles, m.numReduceDone)
+	}
 	return nil
 }
 //
@@ -78,9 +93,7 @@ func (m *Master) server() {
 func (m *Master) Done() bool {
 	ret := false // Move to false!
 
-    ret = m.numMapsDone == len(m.inputFiles) && m.inputFileIndex == len(m.interFiles)
-	// Your code here.
-
+    ret = m.numMapsDone >= len(m.inputFiles) && m.numReduceDone >= len(m.interFiles)
 
 	return ret
 }

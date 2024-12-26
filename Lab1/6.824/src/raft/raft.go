@@ -55,6 +55,17 @@ type Raft struct {
 	dead      int32               // set by Kill()
 
 	// Your data here (2A, 2B, 2C).
+    // Persistent
+    currentTerm int
+    votedFor int
+    log []string
+    isLeader bool
+    // Volatile
+    commitIndex int
+    lastApplied int
+    // Leader only
+    nextIndex []int
+    matchIndex []int
 	// Look at the paper's Figure 2 for a description of what
 	// state a Raft server must maintain.
 
@@ -66,8 +77,11 @@ func (rf *Raft) GetState() (int, bool) {
 
 	var term int
 	var isleader bool
+
+    term = rf.currentTerm
+
 	// Your code here (2A).
-	return term, isleader
+	return rf.currentTerm, rf.isLeader
 }
 
 //
@@ -118,6 +132,10 @@ func (rf *Raft) readPersist(data []byte) {
 //
 type RequestVoteArgs struct {
 	// Your data here (2A, 2B).
+    term int
+    candidateId int
+    lastLogIndex int
+    lastLogTerm int
 }
 
 //
@@ -126,6 +144,8 @@ type RequestVoteArgs struct {
 //
 type RequestVoteReply struct {
 	// Your data here (2A).
+    term int
+    voteGranted bool
 }
 
 //

@@ -18,11 +18,12 @@ package raft
 //
 
 import "sync"
+import "fmt"
 import "sync/atomic"
-import "../labrpc"
+import "6.824/src/labrpc"
 
 // import "bytes"
-// import "../labgob"
+// import "6.824/src/labgob"
 
 
 
@@ -228,6 +229,7 @@ func (rf *Raft) killed() bool {
 //
 func Make(peers []*labrpc.ClientEnd, me int,
 	persister *Persister, applyCh chan ApplyMsg) *Raft {
+    fmt.Println("Creating RAFT Instance.")
 	rf := &Raft{}
 	rf.peers = peers
 	rf.persister = persister

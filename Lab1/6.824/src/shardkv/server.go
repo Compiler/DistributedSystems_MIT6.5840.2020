@@ -5,7 +5,7 @@ package shardkv
 import "../labrpc"
 import "../raft"
 import "sync"
-import "../labgob"
+import "6.824/src/labgob"
 
 
 
